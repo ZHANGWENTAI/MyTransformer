@@ -1,4 +1,3 @@
-import torch
 from torchtext.data import Field, BucketIterator
 from torchtext.datasets import Multi30k
 
@@ -20,7 +19,7 @@ TRG = Field(tokenize="spacy",
             eos_token=KEY_EOS,
             batch_first=True)
 
-train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG), path='.data/multi30k')
+train_data, valid_data, test_data = Multi30k.splits(exts = ('.de', '.en'), fields = (SRC, TRG), path='../.data/multi30k/')
 
 print('train_data:', len(train_data))
 print('valid_data:', len(valid_data))
@@ -35,11 +34,7 @@ trg_vocab_size = len(TRG.vocab)
 print('德语词汇表大小：', len(SRC.vocab), ',前20个：', SRC.vocab.itos[0:20])
 print('英语词汇表大小：', len(TRG.vocab), ',前20个：', TRG.vocab.itos[0:20])
 
-device = torch.device('cuda')
-
-BATCH_SIZE = 256
 train_iterator, valid_iterator, test_iterator = BucketIterator.splits(
     (train_data, valid_data, test_data),
-    batch_size = BATCH_SIZE,
-    device = device)
+    batch_size = 256)
 

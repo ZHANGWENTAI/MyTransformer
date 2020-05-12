@@ -7,16 +7,16 @@ import numpy as np
 def scale_dot_product_attention(q, k, v, dropout=None, mask=None):
     """
     Args:
-        q: [BATCH_SIZE, n_heads, seq_len, d_q]
-        k: [BATCH_SIZE, n_heads, seq_len, d_k]
-        v: [BATCH_SIZE, n_heads, seq_len, d_v]
+        q: [batch_size, n_heads, seq_len, d_q]
+        k: [batch_size, n_heads, seq_len, d_k]
+        v: [batch_size, n_heads, seq_len, d_v]
         dropout: a dropout layer
-        mask: [BATCH_SIZE, 1, seq_len, seq_len] ByteTensor,
+        mask: [batch_size, 1, seq_len, seq_len] ByteTensor,
               in Encoder: mask out all the attention relate to <pad>
               in Decoder: mask out all the attention relate to <pad> and the subsequence position
     return:
-        output: [BATCH_SIZE, n_heads, seq_len, d_v]
-        attention: [BATCH_SIZE, n_heads, seq_len, seq_len]
+        output: [batch_size, n_heads, seq_len, d_v]
+        attention: [batch_size, n_heads, seq_len, seq_len]
     """
     d_k = k.size(-1)
     attention = torch.matmul(q, k.transpose(2, 3))  # torch.matmul support broadcast mechanism
@@ -30,7 +30,7 @@ def scale_dot_product_attention(q, k, v, dropout=None, mask=None):
         attention = dropout(attention)
 
     output = torch.matmul(attention, v)
-    return output, attention
+    return output
 
 
 class SublayerConnection(nn.Module):
@@ -57,18 +57,18 @@ class PositionalEncoding(nn.Module):
         position_encoding[:, 1::2] = np.cos(position_encoding[:, 1::2])
 
         # self.position_encoding: of shape [1, max_seq_len, d_model]
-        self.position_encoding = torch.tensor(position_encoding, device='cuda').float().unsqueeze(0)
+        self.position_encoding = torch.tensor(position_encoding).float().unsqueeze(0).requires_grad_(False)
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x):
         """
         Args:
-            x: [BATCH_SIZE, seq_len, d_model]
+            x: [batch_size, seq_len, d_model]
 
         return:
-            output: [BATCH_SIZE, seq_len, d_model]
+            output: [batch_size, seq_len, d_model]
         """
-        x = x + torch.tensor(self.position_encoding[:, :x.size(1)], requires_grad=False)
+        x = x + self.position_encoding[:, :x.size(1)]
         output = self.dropout(x)
         return output
 
@@ -92,4 +92,8 @@ class Projector(nn.Module):
         self.proj = nn.Linear(d_model, vocab_size)
 
     def forward(self, x):
+        """
+        :param x: [batch_size, seq_len, d_model]
+        :return: [batch_size, seq_len, vocab_size]
+        """
         return F.log_softmax(self.proj(x), dim=-1)

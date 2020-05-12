@@ -20,24 +20,23 @@ class MultiHeadAttention(nn.Module):
         self.w_q = nn.Linear(d_model, d_model, bias=False)
         self.w_o = nn.Linear(d_model, d_model, bias=False)
 
-        self.attention = None
         self.dropout = nn.Dropout(dropout)
         self.layer_norm = nn.LayerNorm(d_model, eps=1e-9)
 
     def forward(self, q, k, v, mask=None):
         """
         Args:
-            q: [BATCH_SIZE, seq_len, d_model]
-            k: [BATCH_SIZE, seq_len, d_model]
-            v: [BATCH_SIZE, seq_len, d_model]
-            mask: [BATCH_SIZE, seq_len, seq_len] ByteTensor
+            q: [batch_size, seq_len, d_model]
+            k: [batch_size, seq_len, d_model]
+            v: [batch_size, seq_len, d_model]
+            mask: [batch_size, seq_len, seq_len] ByteTensor
 
          Return:
-            output: [BATCH_SIZE, seq_len, d_model]
+            output: [batch_size, seq_len, d_model]
         """
         batch_size = q.size(0)
 
-        # self.w_q(q) 这里会把 q 转化成 [BATCH_SIZE * seq_len, d_model] 再相乘
+        # self.w_q(q) 这里会把 q 转化成 [batch_size * seq_len, d_model] 再相乘
         q = self.w_q(q).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
         k = self.w_k(k).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
         v = self.w_v(v).view(batch_size, -1, self.n_heads, self.d_k).transpose(1, 2)
@@ -46,7 +45,7 @@ class MultiHeadAttention(nn.Module):
             # use mask in all heads
             mask = mask.unsqueeze(1)
 
-        output, self.attention = scale_dot_product_attention(q, k, v, dropout=self.dropout, mask=mask)
+        output = scale_dot_product_attention(q, k, v, dropout=self.dropout, mask=mask)
 
         # concat
         output = output.transpose(1, 2).contiguous().view(batch_size, -1, self.d_k * self.n_heads)
@@ -66,9 +65,11 @@ class PositionwiseFeedForward(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        """
-        x: [BATCH_SIZE, seq_len, d_model]
-        """
+        '''
+        :param x: [batch_size, seq_len, d_model]
+        :return output: [batch_size, seq_len, d_model]
+        '''
+
         output = self.w_2(F.relu(self.w_1(x)))
         output = self.dropout(output)
 

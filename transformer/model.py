@@ -15,6 +15,11 @@ class Encoder(nn.Module):
             [EncoderLayer(d_model, n_heads, d_ffn, dropout) for _ in range(n_layers)])
 
     def forward(self, enc_inputs, enc_mask):
+        """
+        :param enc_inputs: [batch_size, seq_len]
+        :param enc_mask: [batch_size, 1, seq_len]
+        :return:
+        """
         enc_outputs = self.src_emb(enc_inputs)
         enc_outputs = self.pos_enc(enc_outputs)
         for layer in self.layers:
@@ -54,11 +59,15 @@ class Transformer(nn.Module):
 
 
     def forward(self, src, trg, src_mask, trg_mask):
-        return self.decode(self.encode(src, src_mask), src_mask,
-                           trg, trg_mask)
+        return self.project(
+            self.decode(self.encode(src, src_mask), src_mask, trg, trg_mask)
+        )
 
     def encode(self, src, src_mask):
         return self.encoder(src, src_mask)
 
     def decode(self, enc_output, src_mask, trg, trg_mask):
         return self.decoder(trg, enc_output, src_mask, trg_mask)
+
+    def project(self, dec_output):
+        return self.trg_proj(dec_output)

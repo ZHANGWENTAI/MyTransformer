@@ -12,7 +12,7 @@ smoothing: 0.1
 
 # train
 lr: 0.0001
-max_epochs: 3
+max_epochs: 6
 batch_size: 256
 max_src_seq_len: 100
 max_trg_seq_len: 100
@@ -20,11 +20,11 @@ max_grad_norm: ~
 optim_factor: 1
 n_warmup_steps: 2000
 log: ~
-model_path: "model.pkl"
+model_path: "../model.pkl"
 
 # translate
-max_decode_step: 100
+max_trg_len: 12
 beam_size: 2
-decode_output: "decode_output.txt"
+translate_output: "../decode_output_ex.txt"
 
 

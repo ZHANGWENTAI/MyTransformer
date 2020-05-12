@@ -1,7 +1,8 @@
 import time
 import yaml
+import torch
 from Data.dataset import *
-from Data.utils import rebatch
+from Data.utils import Batch
 from Train.loss import LabelSmoothing, LossComputation
 from Train.optimizer import NoamOpt
 from transformer.model import Transformer
@@ -13,7 +14,7 @@ def single_epoch(data_iter, model, loss_compute):
     total_loss = 0
     tokens = 0
     for i, batch in enumerate(data_iter):
-        batch = rebatch(batch, PAD_IDX)
+        batch = Batch(batch.src, batch.trg, PAD_IDX)
         out = model.forward(batch.src, batch.trg, batch.src_mask, batch.trg_mask)
         loss = loss_compute(out, batch.trg_y, batch.n_tokens)
 
@@ -40,14 +41,14 @@ def main(opt):
     for epoch in range(option["max_epochs"]):
         model.train()
         single_epoch(train_iterator,
-                  model,
-                  LossComputation(model.trg_proj, criterion, optimizer=optimizer)
-                  )
+            model,
+            LossComputation(criterion, optimizer=optimizer)
+        )
         model.eval()
         loss = single_epoch(valid_iterator,
-                         model,
-                         LossComputation(model.trg_proj, criterion, optimizer=None)
-                         )
+            model,
+            LossComputation( criterion, optimizer=None)
+        )
         print(loss)
 
     torch.save(model.state_dict(), opt['model_path'])
